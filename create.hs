@@ -1,9 +1,11 @@
 #!/usr/bin/env runhaskell
 
+import           Data.Char             (toLower)
 import           Data.List
 import           System.Directory
 import           System.Environment
 import           System.FilePath.Posix
+import           Text.Regex.Posix
 
 data Fso = Directory FilePath
          | File FilePath
@@ -77,7 +79,7 @@ createFileIfNotExists p  =
         (putStrLnConditionally ("file " ++ p ++ " already exists"))
 
 createFile :: FilePath -> IO ()
-createFile p = writeFile p ""
+createFile p = writeFile p (defaultContent p)
 
 trashFsos :: [Fso] -> IO ()
 trashFsos = mapM_ trashFso
@@ -113,3 +115,16 @@ moveDirectory src dest =
 moveFile :: FilePath -> FilePath -> IO ()
 moveFile src dest =
     renameFile src (dest </> src)
+
+defaultContent :: FilePath -> String
+defaultContent p
+    | p =~ ".*\\.hs" = defaultHaskellContent p
+    | otherwise = ""
+
+defaultHaskellContent :: FilePath -> String
+defaultHaskellContent p =
+    "module NemoLib." ++ upper ++ " where\n\n" ++
+        lower ++ " :: \n" ++
+        lower ++ " \n"
+    where upper = p =~ "(.*)\\.hs" !! 0 !! 1
+          lower = (toLower (head upper)) : (tail upper)
